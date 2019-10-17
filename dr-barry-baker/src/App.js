@@ -6,20 +6,25 @@ import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
-import Spinner from 'react-bootstrap/Spinner';
+// import Spinner from 'react-bootstrap/Spinner';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import firebase from './firebase.js'; // <--- add this line
+
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.props = props;
-    this.state = { submitted: false, loading: true };
+    this.state = { submitted: false, loading: true, noName: false, name: ''};
     this.checkInPatient = this.checkInPatient.bind(this);
+    this.showNoName = this.showNoName.bind(this);
+    this.handleFormChange = this.handleFormChange.bind(this);
+
   }
 
   presentFormOrCompleted() {
-    if (this.state.loading) return (   <div style={{height: '2px'}}> <Spinner animation="border" variant="success"/></div>
-);
+//     if (this.state.loading) return (   <Spinner animation="border" variant="success"/>
+// );
     if (!this.state.submitted) return (    <Container>
               <Row className="justify-content-md-center">Welcome!</Row>
               <Row className="justify-content-md-center">
@@ -27,8 +32,9 @@ class App extends Component {
                 <div>
                   <Form>
                     <Form.Group controlId="formName">
-                      <Form.Label>Name</Form.Label>
-                      <Form.Control placeholder="Enter full name." />
+                      <Form.Label >Name</Form.Label>
+                      <Form.Control value={this.state.name} onChange={this.handleFormChange} placeholder="Enter full name." />
+                      {this.showNoName()}
                     </Form.Group>
 
                     <Form.Group controlId="formBasicCheckbox">
@@ -45,10 +51,26 @@ class App extends Component {
       else return (<div>Submitted!</div>)
   }
 
+  handleFormChange(event) {
+    this.setState({name: event.target.value, noName: false});
+  }
+
   checkInPatient(e) {
-    e.preventDefault()
+    e.preventDefault();
+    if (this.state.name.length === 0) {
+      this.setState({noName: true})
+      return;
+    }
+    const itemsRef = firebase.database().ref('signed_in');
+    itemsRef.push({check_in_time: new Date().toLocaleString(), name: this.state.name});
     this.setState({submitted: true});
-    console.log(e.type);
+    setTimeout(() => {
+      this.setState({submitted: false});
+    }, 2000);
+  }
+
+  showNoName() {
+    if (this.state.noName) return (<strong style={{color: 'red'}}>No name!</strong>);
   }
 
   render () {
